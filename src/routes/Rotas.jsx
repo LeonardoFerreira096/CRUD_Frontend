@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from '../pages/Login.jsx';
-import Cadastro from '../pages/Cadastro.jsx';
+import Login from '../pages/pageLogin.jsx';
+import Cadastro from '../pages/pageCadastro.jsx';
 import Dashboard from '../pages/dashboard.jsx';
 
 const Rotas = () => {
