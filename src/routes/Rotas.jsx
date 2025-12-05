@@ -1,19 +1,83 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from '../pages/pageLogin.jsx';
-import Cadastro from '../pages/pageCadastro.jsx';
-import Dashboard from '../pages/dashboard.jsx';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-const Rotas = () => {
+import PageLogin from '../pages/pageLogin';
+import PageCadastro from '../pages/pageCadastro';
+import CadastroFuncionario from '../pages/pageCadastroFuncionario';
+import DashboardCliente from '../pages/dashboardCliente';
+import DashboardFuncionario from '../pages/dashboardFuncionario';
+import DashboardAdm from '../pages/dashboardAdm';
+
+
+function ProtectedRoute({ children, allowedRoles }) {
+  const token = localStorage.getItem('token');
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(usuario.role)) {
+    switch (usuario.role) {
+      case 'cliente':
+        return <Navigate to="/dashboard-cliente" replace />;
+      case 'funcionario':
+        return <Navigate to="/dashboard-funcionario" replace />;
+      case 'admin':
+        return <Navigate to="/dashboard-admin" replace />;
+      default:
+        return <Navigate to="/login" replace />;
+    }
+  }
+
+  return children;
+}
+
+
+function PublicRoute({ children }) {
+  const token = localStorage.getItem('token');
+  const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+
+  if (token) {
+    switch (usuario.role) {
+      case 'cliente':
+        return <Navigate to="/dashboard-cliente" replace />;
+      case 'funcionario':
+        return <Navigate to="/dashboard-funcionario" replace />;
+      case 'admin':
+        return <Navigate to="/dashboard-admin" replace />;
+      default:
+        break;
+    }
+  }
+
+  return children;
+}
+
+function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        {/* Rotas Públicas */}
+        <Route path="/login" element={<PublicRoute><PageLogin /></PublicRoute>} />
+        <Route path="/cadastro" element={<PublicRoute><PageCadastro /></PublicRoute>} />
+        <Route path="/cadastro-funcionario" element={<PublicRoute><CadastroFuncionario /></PublicRoute>} />
+        <Route path="/" element={<PublicRoute><PageLogin /></PublicRoute>} />
+
+        {/* Rotas Protegidas - CLIENTE */}
+        <Route path="/dashboard-cliente" element={<ProtectedRoute allowedRoles={['cliente']}><DashboardCliente /></ProtectedRoute>} />
+
+        {/* Rotas Protegidas - FUNCIONÁRIO */}
+        <Route path="/dashboard-funcionario" element={<ProtectedRoute allowedRoles={['funcionario', 'admin']}><DashboardFuncionario /></ProtectedRoute>} />
+
+        {/* Rotas Protegidas - ADMIN */}
+        <Route path="/dashboard-admin" element={<ProtectedRoute allowedRoles={['admin']}><DashboardAdm /></ProtectedRoute>} />
+
+        {/* Rota 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
-};
+}
 
-export default Rotas;
+export default App;
