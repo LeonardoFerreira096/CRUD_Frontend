@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-
 function DashboardAdm() {
   const [ordensServico, setOrdensServico] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -13,7 +12,7 @@ function DashboardAdm() {
   const [editMode, setEditMode] = useState(false);
   const [currentOrdem, setCurrentOrdem] = useState(null);
   const [filterStatus, setFilterStatus] = useState('');
-  
+
   const [formData, setFormData] = useState({
     nome: '',
     clienteId: '',
@@ -23,11 +22,18 @@ function DashboardAdm() {
     status: 'pendente'
   });
 
+  const getToken = () => localStorage.getItem('token');
+
+  // 🔥 FUNÇÃO QUE ESTAVA FALTANDO
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
   useEffect(() => {
     loadData();
   }, [filterStatus]);
-
-  const getToken = () => localStorage.getItem('token');
 
   const loadData = async () => {
     try {
@@ -45,16 +51,16 @@ function DashboardAdm() {
   };
 
   const loadOrdensServico = async () => {
-    const url = filterStatus 
-      ? `${API_URL}/ordens-servico/admin?status=${filterStatus}` 
+    const url = filterStatus
+      ? `${API_URL}/ordens-servico/admin?status=${filterStatus}`
       : `${API_URL}/ordens-servico/admin`;
-    
+
     const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${getToken()}`
       }
     });
-    
+
     if (!response.ok) throw new Error('Erro ao carregar ordens de serviço');
     const data = await response.json();
     setOrdensServico(data);
@@ -96,9 +102,9 @@ function DashboardAdm() {
           clienteId: parseInt(formData.clienteId)
         })
       });
-      
+
       if (!response.ok) throw new Error('Erro ao criar ordem de serviço');
-      
+
       alert('Ordem de serviço criada com sucesso!');
       closeModal();
       loadData();
@@ -122,9 +128,9 @@ function DashboardAdm() {
           clienteId: parseInt(formData.clienteId)
         })
       });
-      
+
       if (!response.ok) throw new Error('Erro ao atualizar ordem de serviço');
-      
+
       alert('Ordem de serviço atualizada com sucesso!');
       closeModal();
       loadData();
@@ -136,7 +142,7 @@ function DashboardAdm() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Tem certeza que deseja deletar esta ordem de serviço?')) return;
-    
+
     try {
       const response = await fetch(`${API_URL}/ordens-servico/admin/${id}`, {
         method: 'DELETE',
@@ -144,9 +150,9 @@ function DashboardAdm() {
           'Authorization': `Bearer ${getToken()}`
         }
       });
-      
+
       if (!response.ok) throw new Error('Erro ao deletar ordem de serviço');
-      
+
       alert('Ordem de serviço deletada com sucesso!');
       loadData();
     } catch (error) {
@@ -165,7 +171,7 @@ function DashboardAdm() {
         },
         body: JSON.stringify({ status: newStatus })
       });
-      
+
       if (!response.ok) throw new Error('Erro ao atualizar status');
       loadData();
     } catch (error) {
@@ -196,7 +202,9 @@ function DashboardAdm() {
       clienteId: ordem.clienteId.toString(),
       descricao: ordem.descricao || '',
       dataInicio: ordem.dataInicio.split('T')[0],
-      dataPrevistaTermino: ordem.dataPrevistaTermino ? ordem.dataPrevistaTermino.split('T')[0] : '',
+      dataPrevistaTermino: ordem.dataPrevistaTermino
+        ? ordem.dataPrevistaTermino.split('T')[0]
+        : '',
       status: ordem.status
     });
     setShowModal(true);
@@ -222,7 +230,7 @@ function DashboardAdm() {
       concluida: { label: 'Concluída', class: 'bg-green-100 text-green-800' },
       cancelada: { label: 'Cancelada', class: 'bg-red-100 text-red-800' }
     };
-    
+
     const statusInfo = statusMap[status] || statusMap.pendente;
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusInfo.class}`}>
@@ -242,7 +250,7 @@ function DashboardAdm() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header com Badge Admin */}
+        {/* Header com Badge Admin e botão Sair */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <div className="flex items-center gap-3">
@@ -253,12 +261,20 @@ function DashboardAdm() {
             </div>
             <p className="text-gray-600 mt-1">Controle total do sistema</p>
           </div>
-          <button
-            onClick={openCreateModal}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200 shadow-lg hover:shadow-xl"
-          >
-            + Nova Ordem
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={openCreateModal}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200 shadow-lg hover:shadow-xl"
+            >
+              + Nova Ordem
+            </button>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg"
+            >
+              Sair
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -266,23 +282,37 @@ function DashboardAdm() {
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
             <div className="bg-white p-6 rounded-lg shadow">
               <div className="text-gray-500 text-sm font-medium">Total</div>
-              <div className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</div>
+              <div className="text-3xl font-bold text-gray-900 mt-2">
+                {stats.total}
+              </div>
             </div>
+
             <div className="bg-yellow-50 p-6 rounded-lg shadow">
               <div className="text-yellow-700 text-sm font-medium">Pendentes</div>
-              <div className="text-3xl font-bold text-yellow-800 mt-2">{stats.pendentes}</div>
+              <div className="text-3xl font-bold text-yellow-800 mt-2">
+                {stats.pendentes}
+              </div>
             </div>
+
             <div className="bg-blue-50 p-6 rounded-lg shadow">
               <div className="text-blue-700 text-sm font-medium">Em Andamento</div>
-              <div className="text-3xl font-bold text-blue-800 mt-2">{stats.emAndamento}</div>
+              <div className="text-3xl font-bold text-blue-800 mt-2">
+                {stats.emAndamento}
+              </div>
             </div>
+
             <div className="bg-green-50 p-6 rounded-lg shadow">
               <div className="text-green-700 text-sm font-medium">Concluídas</div>
-              <div className="text-3xl font-bold text-green-800 mt-2">{stats.concluidas}</div>
+              <div className="text-3xl font-bold text-green-800 mt-2">
+                {stats.concluidas}
+              </div>
             </div>
+
             <div className="bg-red-50 p-6 rounded-lg shadow">
               <div className="text-red-700 text-sm font-medium">Canceladas</div>
-              <div className="text-3xl font-bold text-red-800 mt-2">{stats.canceladas}</div>
+              <div className="text-3xl font-bold text-red-800 mt-2">
+                {stats.canceladas}
+              </div>
             </div>
           </div>
         )}
@@ -311,19 +341,37 @@ function DashboardAdm() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Início</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Previsão</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nome
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cliente
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Data Início
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Previsão
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 {ordensServico.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                    <td
+                      colSpan="7"
+                      className="px-6 py-4 text-center text-gray-500"
+                    >
                       Nenhuma ordem de serviço encontrada
                     </td>
                   </tr>
@@ -343,13 +391,14 @@ function DashboardAdm() {
                         {new Date(ordem.dataInicio).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ordem.dataPrevistaTermino 
+                        {ordem.dataPrevistaTermino
                           ? new Date(ordem.dataPrevistaTermino).toLocaleDateString('pt-BR')
                           : '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(ordem.status)}
                       </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                         <button
                           onClick={() => openEditModal(ordem)}
@@ -357,9 +406,12 @@ function DashboardAdm() {
                         >
                           Editar
                         </button>
+
                         <select
                           value={ordem.status}
-                          onChange={(e) => handleStatusChange(ordem.id, e.target.value)}
+                          onChange={(e) =>
+                            handleStatusChange(ordem.id, e.target.value)
+                          }
                           className="text-sm border border-gray-300 rounded px-2 py-1"
                         >
                           <option value="pendente">Pendente</option>
@@ -367,6 +419,7 @@ function DashboardAdm() {
                           <option value="concluida">Concluída</option>
                           <option value="cancelada">Cancelada</option>
                         </select>
+
                         <button
                           onClick={() => handleDelete(ordem.id)}
                           className="text-red-600 hover:text-red-900"
@@ -392,6 +445,7 @@ function DashboardAdm() {
                 <h2 className="text-2xl font-bold text-gray-900">
                   {editMode ? 'Editar Ordem de Serviço' : 'Nova Ordem de Serviço'}
                 </h2>
+
                 <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-600 text-3xl font-bold"
@@ -400,7 +454,10 @@ function DashboardAdm() {
                 </button>
               </div>
 
-              <form onSubmit={editMode ? handleUpdate : handleCreate} className="space-y-4">
+              <form
+                onSubmit={editMode ? handleUpdate : handleCreate}
+                className="space-y-4"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nome da Ordem *
@@ -503,6 +560,7 @@ function DashboardAdm() {
                   >
                     Cancelar
                   </button>
+
                   <button
                     type="submit"
                     className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition"

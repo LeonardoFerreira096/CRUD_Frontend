@@ -1,8 +1,8 @@
 // src/pages/dashboardFuncionario.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-
 
 function DashboardFuncionario() {
   const [todasOrdens, setTodasOrdens] = useState([]);
@@ -10,8 +10,10 @@ function DashboardFuncionario() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('');
-  const [activeTab, setActiveTab] = useState('todas'); // 'todas' ou 'minhas'
+  const [activeTab, setActiveTab] = useState('todas');
   const [usuario, setUsuario] = useState(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('usuario'));
@@ -20,6 +22,13 @@ function DashboardFuncionario() {
   }, [filterStatus]);
 
   const getToken = () => localStorage.getItem('token');
+
+  // ===== Logout =====
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('usuario');
+    navigate('/login');
+  };
 
   const loadData = async () => {
     try {
@@ -42,9 +51,7 @@ function DashboardFuncionario() {
       : `${API_URL}/ordens-servico/funcionario/todas`;
     
     const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
+      headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     
     if (!response.ok) throw new Error('Erro ao carregar ordens');
@@ -54,9 +61,7 @@ function DashboardFuncionario() {
 
   const loadMinhasOrdens = async () => {
     const response = await fetch(`${API_URL}/ordens-servico/funcionario/minhas`, {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
+      headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     
     if (!response.ok) throw new Error('Erro ao carregar minhas ordens');
@@ -66,9 +71,7 @@ function DashboardFuncionario() {
 
   const loadStats = async () => {
     const response = await fetch(`${API_URL}/ordens-servico/stats`, {
-      headers: {
-        'Authorization': `Bearer ${getToken()}`
-      }
+      headers: { 'Authorization': `Bearer ${getToken()}` }
     });
     
     if (!response.ok) throw new Error('Erro ao carregar estatísticas');
@@ -126,12 +129,20 @@ function DashboardFuncionario() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Painel de Trabalho</h1>
-          <p className="text-gray-600 mt-1">
-            Bem-vindo(a), {usuario?.nome}! | {usuario?.especialidade || usuario?.cargo}
-          </p>
+        {/* Header com botão Sair */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Painel de Trabalho</h1>
+            <p className="text-gray-600 mt-1">
+              Bem-vindo(a), {usuario?.nome}! | {usuario?.especialidade || usuario?.cargo}
+            </p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition shadow-lg"
+          >
+            Sair
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -232,25 +243,15 @@ function DashboardFuncionario() {
                 ) : (
                   ordensExibidas.map((ordem) => (
                     <tr key={ordem.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        #{ordem.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                        {ordem.nome}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{ordem.id}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">{ordem.nome}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div>{ordem.clientes?.nome || 'N/A'}</div>
                         <div className="text-xs text-gray-400">{ordem.clientes?.telefone}</div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                        {ordem.descricao || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(ordem.dataInicio).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(ordem.status)}
-                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{ordem.descricao || '-'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(ordem.dataInicio).toLocaleDateString('pt-BR')}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(ordem.status)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <select
                           value={ordem.status}
