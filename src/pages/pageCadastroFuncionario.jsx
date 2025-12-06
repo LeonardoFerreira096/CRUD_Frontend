@@ -64,14 +64,14 @@ const CadastroFuncionario = () => {
 
       setMensagem(resposta.data.mensagem || "Cadastro realizado com sucesso!");
 
-      // limpa campos
+      
       setNome("");
       setEmail("");
       setCargo("");
       setEspecialidade("");
       setSenha("");
 
-      // redireciona
+      
       setTimeout(() => navigate("/"), 1500);
 
     } catch (erro) {
